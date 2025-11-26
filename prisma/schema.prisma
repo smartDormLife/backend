@@ -1,0 +1,168 @@
+// =============================
+// Prisma 6.x schema (MySQL)
+// =============================
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// =============================
+// Models (init.sql 기반 100% 동일)
+// =============================
+
+// 1) Dormitory
+model Dormitory {
+  dorm_id   Int    @id
+  dorm_name String
+
+  users User[]
+  posts Post[]
+}
+
+// 2) User
+model User {
+  user_id        Int       @id @default(autoincrement())
+  email          String    @unique
+  password       String
+  name           String
+  dorm_id        Int?
+  room_no        String?
+  phone          String?
+  created_at     DateTime  @default(now())
+  account_number String?
+
+  dorm Dormitory? @relation(fields: [dorm_id], references: [dorm_id])
+
+  posts        Post[]
+  parties_host Party[]     @relation("PartyHost")
+  partyMembers PartyMember[]
+  chatMembers  ChatMember[]
+  chatMessages ChatMessage[]
+  comments     Comment[]
+}
+
+// 3) Post
+model Post {
+  post_id    Int          @id @default(autoincrement())
+  user_id    Int
+  category   PostCategory
+  title      String
+  content    String
+  price      Int?
+  status     PostStatus   @default(active)
+  created_at DateTime     @default(now())
+  dorm_id    Int?
+
+  user  User        @relation(fields: [user_id], references: [user_id])
+  dorm  Dormitory?  @relation(fields: [dorm_id], references: [dorm_id])
+  party Party?
+  comments Comment[]
+}
+
+enum PostCategory {
+  delivery
+  purchase
+  used_sale
+  general
+}
+
+enum PostStatus {
+  active
+  closed
+}
+
+// 4) Party
+model Party {
+  party_id   Int         @id @default(autoincrement())
+  post_id    Int         @unique
+  host_id    Int
+  location   String?
+  deadline   DateTime?
+  max_member Int?
+  status     PartyStatus @default(recruiting)
+  created_at DateTime    @default(now())
+
+  post Post @relation(fields: [post_id], references: [post_id])
+  host User @relation("PartyHost", fields: [host_id], references: [user_id])
+
+  members  PartyMember[]
+  chatRoom ChatRoom?
+}
+
+enum PartyStatus {
+  recruiting
+  closed
+}
+
+// 5) PartyMember
+model PartyMember {
+  party_id       Int
+  user_id        Int
+  join_time      DateTime @default(now())
+  payment_status PaymentStatus @default(unpaid)
+
+  party Party @relation(fields: [party_id], references: [party_id])
+  user  User  @relation(fields: [user_id], references: [user_id])
+
+  @@id([party_id, user_id])
+}
+
+enum PaymentStatus {
+  unpaid
+  paid
+}
+
+// 6) ChatRoom
+model ChatRoom {
+  room_id      Int      @id @default(autoincrement())
+  party_id     Int      @unique
+  created_at   DateTime @default(now())
+  last_message String?
+
+  party Party @relation(fields: [party_id], references: [party_id])
+
+  members  ChatMember[]
+  messages ChatMessage[]
+}
+
+// 7) ChatMember
+model ChatMember {
+  room_id   Int
+  user_id   Int
+  joined_at DateTime @default(now())
+  is_active Boolean  @default(true)
+
+  room ChatRoom @relation(fields: [room_id], references: [room_id])
+  user User     @relation(fields: [user_id], references: [user_id])
+
+  @@id([room_id, user_id])
+}
+
+// 8) ChatMessage
+model ChatMessage {
+  msg_id    Int      @id @default(autoincrement())
+  room_id   Int
+  sender_id Int
+  content   String
+  timestamp DateTime @default(now())
+
+  room   ChatRoom @relation(fields: [room_id], references: [room_id])
+  sender User     @relation(fields: [sender_id], references: [user_id])
+}
+
+// 9) Comment
+model Comment {
+  comment_id Int      @id @default(autoincrement())
+  post_id    Int
+  user_id    Int
+  content    String
+  created_at DateTime @default(now())
+
+  post Post @relation(fields: [post_id], references: [post_id])
+  user User @relation(fields: [user_id], references: [user_id])
+}
