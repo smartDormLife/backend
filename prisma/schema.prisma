@@ -69,6 +69,7 @@ enum PostCategory {
   purchase
   used_sale
   general
+  taxi
 }
 
 enum PostStatus {

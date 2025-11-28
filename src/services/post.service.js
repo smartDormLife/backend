@@ -120,8 +120,8 @@ function buildWhere(query) {
     }
     where.dorm_id = Number(query.dorm_id);
   } else {
-    // taxi는 dorm_id null
-    where.dorm_id = null;
+    // taxi는 dorm_id 제한 없음 (전체 조회)
+    // 명시적으로 null을 찾기보다 필터를 걸지 않는 것이 안전함
   }
 
   // keyword
@@ -331,7 +331,7 @@ async function deletePost(post_id, user_id) {
   };
 }
 
-async function getPostDetail(post_id) {
+async function getPostDetail(post_id, user_id) {
   const post = await prisma.post.findUnique({
     where: { post_id },
     include: {
@@ -381,28 +381,38 @@ async function getPostDetail(post_id) {
     orderBy: { created_at: "asc" }
   });
 
+  let partyData = null;
+  if (post.party) {
+    const members = post.party.members.map((m) => ({
+      user_id: m.user_id,
+      name: m.user.name
+    }));
+
+    const isJoined = user_id
+      ? members.some((m) => m.user_id === user_id)
+      : false;
+
+    partyData = {
+      party_id: post.party.party_id,
+      max_member: post.party.max_member,
+      status: post.party.status,
+      members,
+      current_member_count: members.length,
+      is_joined: isJoined
+    };
+  }
+
   return {
     post: post,
-    party: post.party
-      ? {
-          party_id: post.party.party_id,
-          max_member: post.party.max_member,
-          status: post.party.status,
-          members: post.party.members.map((m) => ({
-            user_id: m.user_id,
-            name: m.user.name
-          }))
-        }
-      : null,
+    party: partyData,
     comments
   };
 }
-
-export default { 
-  createPost, 
-  getPosts, 
+export default {
+  createPost,
+  getPosts,
   getRecentPosts,
   getPostDetail,
-  updatePost, 
+  updatePost,
   deletePost
 };

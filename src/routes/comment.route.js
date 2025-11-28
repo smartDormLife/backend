@@ -8,13 +8,31 @@ import * as commentController from "../controllers/comment.controller.js";
 
 const router = Router();
 
-// 댓글 목록
+// 댓글 목록 (Query Param)
 router.get(
   "/comments",
   authMiddleware,
   extractDormIdMiddleware,
   dormAccessMiddleware,
   commentController.getComments
+);
+
+// 댓글 목록 (Path Param) - for frontend compatibility
+router.get(
+  "/posts/:postId/comments",
+  authMiddleware,
+  extractDormIdMiddleware,
+  dormAccessMiddleware,
+  commentController.getPostComments
+);
+
+// 댓글 작성 (Path Param) - for frontend compatibility
+router.post(
+  "/posts/:postId/comments",
+  authMiddleware,
+  extractDormIdMiddleware,
+  dormAccessMiddleware,
+  commentController.createPostComment
 );
 
 // 댓글 작성

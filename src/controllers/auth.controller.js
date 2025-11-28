@@ -43,3 +43,8 @@ export async function updateMe(req, res) {
       .json({ message: err.message ?? "Server error" });
   }
 }
+
+export async function logout(req, res) {
+  // Client side clears the token. Server just responds OK.
+  return res.status(200).json({ message: "Logged out successfully" });
+}

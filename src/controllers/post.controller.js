@@ -70,7 +70,9 @@ export async function deletePost(req, res) {
 export async function getPostDetail(req, res) {
   try {
     const postId = Number(req.params.postId);
-    const result = await postService.getPostDetail(postId);
+    // 로그인 안된 상태일 수도 있으므로 req.user?.user_id
+    const userId = req.user?.user_id;
+    const result = await postService.getPostDetail(postId, userId);
 
     return res.status(200).json(result);
   } catch (err) {

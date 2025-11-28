@@ -145,3 +145,5 @@ vite.config.ts.timestamp-*
 .env
 
 /src/routes/test.route.js
+
+prisma/migrations
