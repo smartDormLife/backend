@@ -11,6 +11,8 @@ import partyRouter from "./routes/party.route.js";
 import commentRouter from "./routes/comment.route.js";
 import userRouter from "./routes/user.route.js";
 
+
+
 const app = express();
 const FRONTEND_URL = process.env.FRONTEND_URL || "";
 app.use(cors({
@@ -22,10 +24,11 @@ app.use(express.json());
 // Auth
 app.use("/auth", authRouter);
 // app.use("/", testRouter);
-app.use("/", dormRouter);
 app.use("/", postRouter);
 app.use("/", partyRouter);
 app.use("/", commentRouter);
+app.use("/", dormRouter);
+app.use("/user", userRouter);
 app.use("/users", userRouter);
 
 const PORT = process.env.PORT || 3000;

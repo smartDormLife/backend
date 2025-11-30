@@ -1,73 +1,16 @@
 import { Router } from "express";
+import { postController } from "../controllers/post.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
-import {
-  extractDormIdMiddleware,
-  dormAccessMiddleware
-} from "../middlewares/dorm.middleware.js";
-import * as postController from "../controllers/post.controller.js";
 
 const router = Router();
 
-//recent posts
-router.get(
-  "/posts/recent",
-  authMiddleware,
-  postController.getRecentPosts
-);
-
-//list
-router.get(
-  "/posts",
-  authMiddleware,
-  extractDormIdMiddleware,
-  dormAccessMiddleware,
-  postController.getPosts
-);
-
-//detail
-router.get(
-  "/posts/:postId",
-  authMiddleware,
-  extractDormIdMiddleware,
-  dormAccessMiddleware,
-  postController.getPostDetail
-);
-
-//create
-router.post(
-  "/posts",
-  authMiddleware,
-  extractDormIdMiddleware,
-  dormAccessMiddleware,
-  postController.createPost
-);
-
-//patch
-router.patch(
-  "/posts/:postId",
-  authMiddleware,
-  extractDormIdMiddleware,
-  dormAccessMiddleware,
-  postController.updatePost
-);
-
-//delete
-router.delete(
-  "/posts/:postId",
-  authMiddleware,
-  extractDormIdMiddleware,
-  dormAccessMiddleware,
-  postController.deletePost
-);
-
-router.get(
-  "/posts/:postId",
-  authMiddleware,
-  extractDormIdMiddleware,
-  dormAccessMiddleware,
-  postController.getPostDetail
-);
-
+//router.get("/", authMiddleware, postController.getPosts);
+router.get("/posts", authMiddleware, postController.getPosts);
+router.get("/posts/:postId", authMiddleware, postController.getPost);
+router.get("/board/:dormId/:category/:postId", authMiddleware, postController.getPost);
+router.post("/posts", authMiddleware, postController.createPost);
+router.patch("/posts/:postId", authMiddleware, postController.updatePost);
+router.delete("/posts/:postId", authMiddleware, postController.deletePost);
 
 
 export default router;

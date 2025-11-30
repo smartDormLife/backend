@@ -1,85 +1,82 @@
 import prisma from "../config/prisma.js";
 
+// ------------------------------
+// 1) dorm_id / category 추출
+// ------------------------------
 export async function extractDormIdMiddleware(req, res, next) {
   try {
-    // 1) Query에 dorm_id → GET /posts?dorm_id=
-    if (req.query && req.query.dorm_id) {
+    // Query.dorm_id → GET posts?dorm_id=
+    if (req.query?.dorm_id) {
       req.requestedDormId = Number(req.query.dorm_id);
       return next();
     }
 
-    // 2) Body에 dorm_id → POST/PUT/PATCH 요청에서만 사용
-    if (req.body && req.body.dorm_id !== undefined) {
+    // Body.dorm_id → POST/PATCH
+    if (req.body?.dorm_id !== undefined) {
       req.requestedDormId = Number(req.body.dorm_id);
       return next();
     }
 
-    // 3) URL param - postId 있는 경우: GET /posts/:postId
-    if (req.params && req.params.postId) {
+    // Posts/:postId (GET/POST comments 포함)
+    if (req.params?.postId) {
       const post = await prisma.post.findUnique({
         where: { post_id: Number(req.params.postId) },
         select: { dorm_id: true, category: true },
       });
 
-      if (!post) {
-        return res.status(404).json({ message: "Post not found" });
-      }
+      if (!post) return res.status(404).json({ message: "Post not found" });
 
-      req.requestedDormId = post.dorm_id;
-      req.postCategory = post.category;
+      req.requestedDormId = post.dorm_id;      // taxi면 null
+      req.postCategory   = post.category;      // taxi / delivery / purchase / general
       return next();
     }
 
-    // 4) partyId 기반 요청 (join/leave 등)
-    if (req.params && req.params.partyId) {
+    // PartyId (join/leave)
+    if (req.params?.partyId) {
       const party = await prisma.party.findUnique({
         where: { party_id: Number(req.params.partyId) },
-        select: {
-          post: { select: { dorm_id: true, category: true } },
-        },
+        select: { post: { select: { dorm_id: true, category: true } } },
       });
 
-      if (!party) {
-        return res.status(404).json({ message: "Party not found" });
-      }
+      if (!party) return res.status(404).json({ message: "Party not found" });
 
       req.requestedDormId = party.post.dorm_id;
       req.postCategory = party.post.category;
       return next();
     }
 
-    // 5) 아무것도 없으면 그냥 next()
     return next();
-
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Server error" });
   }
 }
 
-
+// ------------------------------
+// 2) dorm 접근 제한
+// ------------------------------
 export function dormAccessMiddleware(req, res, next) {
   const userDorm = req.user?.dorm_id ?? null;
   const requestedDorm = req.requestedDormId ?? null;
-  const postCategory = req.postCategory ?? req.body?.category ?? req.query?.category;
+  const postCategory =
+    req.postCategory ??
+    req.body?.category ??
+    req.query?.category ??
+    null;
 
-  // 1) taxi는 dorm 제한 없음
-  if (postCategory === "taxi") {
-    return next();
-  }
+  // 1) category를 알 수 없으면 검증 하지 않음 (댓글 POST 등)
+  if (!postCategory) return next();
 
-  // 2) dorm_id가 없는 요청은 검증할 필요 없음
-  if (requestedDorm === null || requestedDorm === undefined) {
-    return next();
-  }
+  // 2) taxi는 전체 공개
+  if (postCategory === "taxi") return next();
 
-  // 3) user.dorm_id가 null 인 경우는 dorm_id 요구 API 사용 불가
-  if (userDorm === null) {
+  // 3) dorm_id 필요하지만 유저가 할당받지 않은 경우
+  if (requestedDorm !== null && userDorm === null) {
     return res.status(403).json({ message: "Dormitory not assigned" });
   }
 
   // 4) dorm mismatch → 접근 금지
-  if (Number(userDorm) !== Number(requestedDorm)) {
+  if (requestedDorm !== null && Number(userDorm) !== Number(requestedDorm)) {
     return res.status(403).json({ message: "Forbidden: Dorm access denied" });
   }
 

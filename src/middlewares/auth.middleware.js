@@ -1,29 +1,23 @@
-import { verifyAccessToken } from "../utils/jwt.js";
+import jwt from "jsonwebtoken";
 import prisma from "../config/prisma.js";
 
-export async function authMiddleware(req, res, next) {
+export const authMiddleware = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader)
-      return res.status(401).json({ message: "No token provided" });
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ message: "No token provided" });
 
-    const token = authHeader.split(" ")[1];
-    if (!token)
-      return res.status(401).json({ message: "Invalid token" });
-
-    const decoded = verifyAccessToken(token);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const user = await prisma.user.findUnique({
       where: { user_id: decoded.user_id },
-      select: { user_id: true, dorm_id: true },
+      include: { dorm: true }
     });
 
-    if (!user)
-      return res.status(401).json({ message: "Invalid user" });
+    if (!user) return res.status(401).json({ message: "Invalid token" });
 
-    req.user = user;   // user_id, dorm_id 둘 다 포함됨
+    req.user = user;
     next();
-  } catch (err) {
-    return res.status(401).json({ message: "Invalid or expired token" });
+  } catch (e) {
+    return res.status(401).json({ message: "Unauthorized" });
   }
-}
+};

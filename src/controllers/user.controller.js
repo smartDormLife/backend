@@ -1,25 +1,39 @@
-import userService from "../services/user.service.js";
+import { userService } from "../services/user.service.js";
 
-export async function getMe(req, res) {
-  try {
-    const userId = req.user.user_id;
-    const result = await userService.getMe(userId);
+export const userController = {
+  getMe: async (req, res, next) => {
+    try {
+      const user = await userService.getMe(req.user.user_id);
+      return res.json(user);
+    } catch (e) {
+      next(e);
+    }
+  },
 
-    return res.status(200).json(result);
-  } catch (err) {
-    console.error(err);
-    return res.status(err.status ?? 500).json({ message: err.message });
+  updateMe: async (req, res, next) => {
+    try {
+      const updated = await userService.updateMe(req.user.user_id, req.body);
+      return res.json(updated);
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  getMyPosts: async (req, res, next) => {
+    try {
+      const posts = await userService.getMyPosts(req.user.user_id);
+      return res.json(posts);
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  getMyParties: async (req, res, next) => {
+    try {
+      const parties = await userService.getMyParties(req.user.user_id);
+      return res.json(parties);
+    } catch (e) {
+      next(e);
+    }
   }
-}
-
-export async function updateMe(req, res) {
-  try {
-    const userId = req.user.user_id;
-    const result = await userService.updateMe(userId, req.body);
-
-    return res.status(200).json(result);
-  } catch (err) {
-    console.error(err);
-    return res.status(err.status ?? 500).json({ message: err.message });
-  }
-}
+};
