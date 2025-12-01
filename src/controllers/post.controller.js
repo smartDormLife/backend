@@ -30,7 +30,8 @@ export async function getPosts(req, res) {
 export async function getRecentPosts(req, res) {
   try {
     const limit = Number(req.query.limit ?? 5);
-    const result = await postService.getRecentPosts(limit);
+    const userDormId = req.user?.dorm_id ?? null;
+    const result = await postService.getRecentPosts(limit, userDormId);
     return res.status(200).json(result);
   } catch (err) {
     return res.status(err.status ?? 500).json({ message: err.message });
@@ -80,4 +81,3 @@ export async function getPostDetail(req, res) {
     return res.status(err.status ?? 500).json({ message: err.message });
   }
 }
-

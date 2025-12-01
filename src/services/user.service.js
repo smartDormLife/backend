@@ -26,7 +26,17 @@ async function getMe(user_id) {
     throw e;
   }
 
-  return user;
+  return {
+    user_id: user.user_id,
+    email: user.email,
+    name: user.name,
+    dorm_id: user.dorm_id,
+    dorm_name: user.dorm?.dorm_name ?? null,
+    room_no: user.room_no,
+    phone: user.phone,
+    account_number: user.account_number,
+    created_at: user.created_at
+  };
 }
 
 function buildPagination(query) {
@@ -209,11 +219,26 @@ async function updateMe(user_id, body) {
       room_no: true,
       phone: true,
       account_number: true,
-      created_at: true
+      created_at: true,
+      dorm: {
+        select: {
+          dorm_name: true
+        }
+      }
     }
   });
 
-  return updated;
+  return {
+    user_id: updated.user_id,
+    email: updated.email,
+    name: updated.name,
+    dorm_id: updated.dorm_id,
+    dorm_name: updated.dorm?.dorm_name ?? null,
+    room_no: updated.room_no,
+    phone: updated.phone,
+    account_number: updated.account_number,
+    created_at: updated.created_at
+  };
 }
 
 export default {

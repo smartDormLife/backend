@@ -34,12 +34,15 @@ async function register(data) {
   return {
     accessToken: token,
     user: {
+      user_id: user.user_id,
       name: user.name,
       email: user.email,
+      dorm_id: user.dorm_id,
       dorm_name: user.dorm?.dorm_name ?? null,
       room_no: user.room_no ?? null,
       phone: user.phone ?? null,
       account_number: user.account_number ?? null,
+      created_at: user.created_at
     },
   };
 }
@@ -70,12 +73,15 @@ async function login(data) {
   return {
     accessToken: token,
     user: {
+      user_id: user.user_id,
       name: user.name,
       email: user.email,
+      dorm_id: user.dorm_id,
       dorm_name: user.dorm?.dorm_name ?? null,
       room_no: user.room_no ?? null,
       phone: user.phone ?? null,
       account_number: user.account_number ?? null,
+      created_at: user.created_at
     },
   };
 }
@@ -93,12 +99,15 @@ async function getMe(user_id) {
   }
 
   return {
+    user_id: user.user_id,
     name: user.name,
     email: user.email,
+    dorm_id: user.dorm_id,
     dorm_name: user.dorm?.dorm_name ?? null,
     room_no: user.room_no,
     phone: user.phone,
     account_number: user.account_number ?? null,
+    created_at: user.created_at
   };
 }
 
@@ -110,12 +119,15 @@ async function updateMe(user_id, data) {
   });
 
   return {
+    user_id: user.user_id,
     name: user.name,
     email: user.email,
+    dorm_id: user.dorm_id,
     dorm_name: user.dorm?.dorm_name ?? null,
     room_no: user.room_no,
     phone: user.phone,
     account_number: user.account_number ?? null,
+    created_at: user.created_at
   };
 }
 

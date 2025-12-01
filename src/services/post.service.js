@@ -189,11 +189,21 @@ async function getPosts(query) {
   };
 }
 
-async function getRecentPosts(limit = 5) {
+async function getRecentPosts(limit = 5, userDormId = null) {
+  const where = {
+    status: "active",
+  };
+
+  // 택시는 dorm 제한 없음, 그 외에는 로그인 사용자의 dorm_id로 필터
+  if (userDormId !== null) {
+    where.OR = [
+      { category: "taxi" },
+      { dorm_id: Number(userDormId) },
+    ];
+  }
+
   const posts = await prisma.post.findMany({
-    where: {
-      status: "active"
-    },
+    where,
     include: {
       user: {
         select: { name: true, dorm_id: true }
