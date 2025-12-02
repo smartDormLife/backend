@@ -1,122 +1,48 @@
-import prisma from "../config/prisma.js";
+import prisma from "../utils/prisma.js";
 import bcrypt from "bcryptjs";
-import { signAccessToken } from "../utils/jwt.js";
+import jwt from "jsonwebtoken";
 
-async function register(data) {
-  const { email, password, name, dorm_id, room_no, phone } = data;
+export const authService = {
+  async login({ email, password }) {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) throw { status: 401, message: "Invalid credentials" };
 
-  const exists = await prisma.user.findUnique({
-    where: { email },
-  });
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) throw { status: 401, message: "Invalid credentials" };
 
-  if (exists) {
-    const err = new Error("Email already exists");
-    err.status = 409;
-    throw err;
+    const accessToken = jwt.sign(
+      { user_id: user.user_id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return {
+      accessToken,
+      user
+    };
+  },
+
+  async register(data) {
+    const exists = await prisma.user.findUnique({
+      where: { email: data.email }
+    });
+    if (exists) throw { status: 409, message: "Email already exists" };
+
+    const hash = await bcrypt.hash(data.password, 10);
+
+    const user = await prisma.user.create({
+      data: { ...data, password: hash }
+    });
+
+    const token = jwt.sign(
+      { user_id: user.user_id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return {
+      accessToken: token,
+      user
+    };
   }
-
-  const hashed = await bcrypt.hash(password, 10);
-
-  const user = await prisma.user.create({
-    data: {
-      email,
-      password: hashed,
-      name,
-      dorm_id,
-      room_no,
-      phone,
-    },
-    include: { dorm: true },
-  });
-
-  const token = signAccessToken({ user_id: user.user_id });
-
-  return {
-    accessToken: token,
-    user: {
-      name: user.name,
-      email: user.email,
-      dorm_name: user.dorm?.dorm_name ?? null,
-      room_no: user.room_no ?? null,
-      phone: user.phone ?? null,
-      account_number: user.account_number ?? null,
-    },
-  };
-}
-
-async function login(data) {
-  const { email, password } = data;
-
-  const user = await prisma.user.findUnique({
-    where: { email },
-    include: { dorm: true },
-  });
-
-  if (!user) {
-    const err = new Error("Invalid email or password");
-    err.status = 401;
-    throw err;
-  }
-
-  const isValid = await bcrypt.compare(password, user.password);
-  if (!isValid) {
-    const err = new Error("Invalid email or password");
-    err.status = 401;
-    throw err;
-  }
-
-  const token = signAccessToken({ user_id: user.user_id });
-
-  return {
-    accessToken: token,
-    user: {
-      name: user.name,
-      email: user.email,
-      dorm_name: user.dorm?.dorm_name ?? null,
-      room_no: user.room_no ?? null,
-      phone: user.phone ?? null,
-      account_number: user.account_number ?? null,
-    },
-  };
-}
-
-async function getMe(user_id) {
-  const user = await prisma.user.findUnique({
-    where: { user_id },
-    include: { dorm: true },
-  });
-
-  if (!user) {
-    const err = new Error("User not found");
-    err.status = 404;
-    throw err;
-  }
-
-  return {
-    name: user.name,
-    email: user.email,
-    dorm_name: user.dorm?.dorm_name ?? null,
-    room_no: user.room_no,
-    phone: user.phone,
-    account_number: user.account_number ?? null,
-  };
-}
-
-async function updateMe(user_id, data) {
-  const user = await prisma.user.update({
-    where: { user_id },
-    data,
-    include: { dorm: true },
-  });
-
-  return {
-    name: user.name,
-    email: user.email,
-    dorm_name: user.dorm?.dorm_name ?? null,
-    room_no: user.room_no,
-    phone: user.phone,
-    account_number: user.account_number ?? null,
-  };
-}
-
-export default { register, login, getMe, updateMe };
+};

@@ -1,114 +1,56 @@
-import prisma from "../config/prisma.js";
+import prisma from "../utils/prisma.js";
 
-async function joinParty(party_id, user_id) {
-  const party = await prisma.party.findUnique({
-    where: { party_id },
-    include: {
-      members: true,
-    },
-  });
+export const partyService = {
+  async join(userId, partyId) {
+    const party = await prisma.party.findUnique({
+      where: { party_id: partyId },
+      include: { members: true }
+    });
 
-  if (!party) {
-    const e = new Error("Party not found");
-    e.status = 404;
-    throw e;
-  }
+    if (!party) throw { status: 404, message: "Party not found" };
 
-  // 이미 closed?
-  if (party.status === "closed") {
-    const e = new Error("Party already closed");
-    e.status = 403;
-    throw e;
-  }
+    if (party.members.some((m) => m.user_id === userId))
+      throw { status: 409, message: "Already joined" };
 
-  // 중복 참여 검사
-  const already = party.members.find(m => m.user_id === user_id);
-  if (already) {
-    const e = new Error("Already joined");
-    e.status = 409;
-    throw e;
-  }
+    if (party.max_member && party.members.length >= party.max_member)
+      throw { status: 409, message: "Party is full" };
 
-  // 정원 초과 검사
-  const currentCount = party.members.length;
-  if (party.max_member && currentCount >= party.max_member) {
-    const e = new Error("Party is full");
-    e.status = 409;
-    throw e;
-  }
+    await prisma.partyMember.create({
+      data: { user_id: userId, party_id: partyId }
+    });
 
-  // 참여
-  await prisma.partyMember.create({
-    data: {
-      party_id,
-      user_id
-    }
-  });
+    const updated = await prisma.party.findUnique({
+      where: { party_id: partyId },
+      include: { members: true }
+    });
 
-  // 참여 후 다시 count
-  const updatedMembers = await prisma.partyMember.count({
-    where: { party_id }
-  });
+    return {
+      current_member_count: updated.members.length,
+      status: updated.status
+    };
+  },
 
-  // 정원 도달 → party close
-  let updatedStatus = party.status;
-  if (party.max_member && updatedMembers >= party.max_member) {
-    updatedStatus = "closed";
-    await prisma.party.update({
-      where: { party_id },
-      data: { status: "closed" }
+  async leave(userId, partyId) {
+    await prisma.partyMember.delete({
+      where: {
+        party_id_user_id: { party_id: partyId, user_id: userId }
+      }
+    });
+
+    const updated = await prisma.party.findUnique({
+      where: { party_id: partyId },
+      include: { members: true }
+    });
+
+    return {
+      current_member_count: updated.members.length
+    };
+  },
+
+  async detail(partyId) {
+    return await prisma.party.findUnique({
+      where: { party_id: partyId },
+      include: { members: true, post: true }
     });
   }
-
-  return {
-    current_member_count: updatedMembers,
-    status: updatedStatus
-  };
-}
-
-async function leaveParty(party_id, user_id) {
-  const party = await prisma.party.findUnique({
-    where: { party_id },
-    include: {
-      members: true
-    },
-  });
-
-  if (!party) {
-    const e = new Error("Party not found");
-    e.status = 404;
-    throw e;
-  }
-
-  // 참가 여부 확인
-  const member = party.members.find(m => m.user_id === user_id);
-  if (!member) {
-    const e = new Error("Not a party member");
-    e.status = 403;
-    throw e;
-  }
-
-  // 삭제
-  await prisma.partyMember.delete({
-    where: {
-      party_id_user_id: {
-        party_id,
-        user_id
-      }
-    }
-  });
-
-  // 다시 count
-  const updatedCount = await prisma.partyMember.count({
-    where: { party_id }
-  });
-
-  return {
-    current_member_count: updatedCount
-  };
-}
-
-export default {
-  joinParty,
-  leaveParty
 };

@@ -1,25 +1,16 @@
-import userService from "../services/user.service.js";
+import { userService } from "../services/user.service.js";
 
-export async function getMe(req, res) {
-  try {
-    const userId = req.user.user_id;
-    const result = await userService.getMe(userId);
-
-    return res.status(200).json(result);
-  } catch (err) {
-    console.error(err);
-    return res.status(err.status ?? 500).json({ message: err.message });
+export const userController = {
+  async me(req, res) {
+    res.json(await userService.me(req.user.user_id));
+  },
+  async updateMe(req, res) {
+    res.json(await userService.updateMe(req.user.user_id, req.body));
+  },
+  async myPosts(req, res) {
+    res.json(await userService.myPosts(req.user.user_id, req.query));
+  },
+  async myParties(req, res) {
+    res.json(await userService.myParties(req.user.user_id));
   }
-}
-
-export async function updateMe(req, res) {
-  try {
-    const userId = req.user.user_id;
-    const result = await userService.updateMe(userId, req.body);
-
-    return res.status(200).json(result);
-  } catch (err) {
-    console.error(err);
-    return res.status(err.status ?? 500).json({ message: err.message });
-  }
-}
+};

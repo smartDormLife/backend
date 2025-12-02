@@ -1,16 +1,8 @@
-import { Router } from 'express'
-import authRouter from './auth.route.js'
-import userRouter from './user.route.js'
-import postRouter from './post.route.js'
-import partyRouter from './party.route.js'
-import commentRouter from './comment.route.js'
+import auth from "./auth.routes.js";
+import users from "./users.routes.js";
+import posts from "./posts.routes.js";
+import comments from "./comments.routes.js";
+import parties from "./parties.routes.js";
+import dorm from "./dorm.routes.js";
 
-const router = Router()
-
-router.use('/auth', authRouter)
-router.use('/users', userRouter)
-router.use('/posts', postRouter)
-router.use('/parties', partyRouter)
-router.use('/comments', commentRouter)
-
-export default router
+export default { auth, users, posts, comments, parties, dorm };

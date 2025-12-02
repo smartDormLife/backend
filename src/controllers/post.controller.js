@@ -1,83 +1,129 @@
-import postService from "../services/post.service.js";
+import { postService } from "../services/post.service.js";
 
-export async function createPost(req, res) {
-  try {
-    const user_id = req.user.user_id;
-    const result = await postService.createPost(user_id, req.body);
+export const postController = {
+  // ---------------------------
+  // 게시판 목록
+  // ---------------------------
+  async list(req, res) {
+    try {
+      const userId = req.user?.user_id;   // ★ 핵심
+      const data = await postService.list(req.query, userId);
+      return res.json(data);
+    } catch (err) {
+      console.error(err);
+      const status = err.status || 500;
+      return res.status(status).json({ message: err.message || "Server error" });
+    }
+  },
 
-    return res.status(201).json(result);
-  } catch (err) {
-    console.error(err);
-    return res
-      .status(err.status ?? 500)
-      .json({ message: err.message ?? "Server error" });
-  }
-}
+  // ---------------------------
+  // 최신 게시글
+  // ---------------------------
+  async recent(req, res) {
+    try {
+      const data = await postService.recent();
+      return res.json(data);
+    } catch (err) {
+      console.error(err);
+      const status = err.status || 500;
+      return res.status(status).json({ message: err.message || "Server error" });
+    }
+  },
 
-export async function getPosts(req, res) {
-  try {
-    const result = await postService.getPosts(req.query);
-    return res.status(200).json(result);
-  } catch (err) {
-    console.error(err);
-    return res
-      .status(err.status ?? 500)
-      .json({ message: err.message ?? "Server error" });
-  }
-}
+  // ---------------------------
+  // 상세 조회
+  // ---------------------------
+  async detail(req, res) {
+    try {
+      const userId = req.user?.user_id;   // ★ 핵심
+      const postId = Number(req.params.postId);
 
+      const data = await postService.detail(postId, userId);
+      return res.json(data);
+    } catch (err) {
+      console.error(err);
+      const status = err.status || 500;
+      return res.status(status).json({ message: err.message || "Server error" });
+    }
+  },
 
-export async function getRecentPosts(req, res) {
-  try {
-    const limit = Number(req.query.limit ?? 5);
-    const result = await postService.getRecentPosts(limit);
-    return res.status(200).json(result);
-  } catch (err) {
-    return res.status(err.status ?? 500).json({ message: err.message });
-  }
-}
+  // ---------------------------
+  // 생성
+  // ---------------------------
+  async create(req, res) {
+    try {
+      const userId = req.user?.user_id;
+      const data = await postService.create(userId, req.body);
+      return res.json(data);
+    } catch (err) {
+      console.error(err);
+      const status = err.status || 500;
+      return res.status(status).json({ message: err.message || "Server error" });
+    }
+  },
 
-export async function updatePost(req, res) {
-  try {
-    const postId = Number(req.params.postId);
-    const userId = req.user.user_id;
+  // ---------------------------
+  // 수정
+  // ---------------------------
+  async update(req, res) {
+    try {
+      const userId = req.user?.user_id;
+      const postId = Number(req.params.postId);
+      const data = await postService.update(userId, postId, req.body);
+      return res.json(data);
+    } catch (err) {
+      console.error(err);
+      const status = err.status || 500;
+      return res.status(status).json({ message: err.message || "Server error" });
+    }
+  },
 
-    const result = await postService.updatePost(postId, userId, req.body);
+  // ---------------------------
+  // 삭제
+  // ---------------------------
+  async remove(req, res) {
+    try {
+      const userId = req.user?.user_id;
+      const postId = Number(req.params.postId);
+      await postService.remove(userId, postId);
+      return res.json({ success: true });
+    } catch (err) {
+      console.error(err);
+      const status = err.status || 500;
+      return res.status(status).json({ message: err.message || "Server error" });
+    }
+  },
 
-    return res.status(200).json(result);
-  } catch (err) {
-    console.error(err);
-    return res
-      .status(err.status ?? 500)
-      .json({ message: err.message ?? "Server error" });
-  }
-}
+  // ---------------------------
+  // 댓글 목록
+  // ---------------------------
+  async listComments(req, res) {
+    try {
+      const postId = Number(req.params.postId);
+      const data = await postService.listComments(postId);
+      return res.json(data);
+    } catch (err) {
+      console.error(err);
+      const status = err.status || 500;
+      return res.status(status).json({ message: err.message || "Server error" });
+    }
+  },
 
-export async function deletePost(req, res) {
-  try {
-    const postId = Number(req.params.postId);
-    const userId = req.user.user_id;
+  // ---------------------------
+  // 댓글 추가
+  // ---------------------------
+  async addComment(req, res) {
+    try {
+      const userId = req.user?.user_id;
+      const postId = Number(req.params.postId);
+      const content = req.body.content;
 
-    const result = await postService.deletePost(postId, userId);
-
-    return res.status(200).json(result);
-  } catch (err) {
-    console.error(err);
-    return res.status(err.status ?? 500).json({ message: err.message });
-  }
-}
-
-export async function getPostDetail(req, res) {
-  try {
-    const postId = Number(req.params.postId);
-    // 로그인 안된 상태일 수도 있으므로 req.user?.user_id
-    const userId = req.user?.user_id;
-    const result = await postService.getPostDetail(postId, userId);
-
-    return res.status(200).json(result);
-  } catch (err) {
-    console.error(err);
-    return res.status(err.status ?? 500).json({ message: err.message });
-  }
-}
-
+      const data = await postService.addComment(userId, postId, content);
+      return res.json(data);
+    } catch (err) {
+      console.error(err);
+      const status = err.status || 500;
+      return res.status(status).json({ message: err.message || "Server error" });
+    }
+  },
+};
