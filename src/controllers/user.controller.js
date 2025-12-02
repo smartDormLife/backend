@@ -1,39 +1,16 @@
 import { userService } from "../services/user.service.js";
 
 export const userController = {
-  getMe: async (req, res, next) => {
-    try {
-      const user = await userService.getMe(req.user.user_id);
-      return res.json(user);
-    } catch (e) {
-      next(e);
-    }
+  async me(req, res) {
+    res.json(await userService.me(req.user.user_id));
   },
-
-  updateMe: async (req, res, next) => {
-    try {
-      const updated = await userService.updateMe(req.user.user_id, req.body);
-      return res.json(updated);
-    } catch (e) {
-      next(e);
-    }
+  async updateMe(req, res) {
+    res.json(await userService.updateMe(req.user.user_id, req.body));
   },
-
-  getMyPosts: async (req, res, next) => {
-    try {
-      const posts = await userService.getMyPosts(req.user.user_id);
-      return res.json(posts);
-    } catch (e) {
-      next(e);
-    }
+  async myPosts(req, res) {
+    res.json(await userService.myPosts(req.user.user_id, req.query));
   },
-
-  getMyParties: async (req, res, next) => {
-    try {
-      const parties = await userService.getMyParties(req.user.user_id);
-      return res.json(parties);
-    } catch (e) {
-      next(e);
-    }
+  async myParties(req, res) {
+    res.json(await userService.myParties(req.user.user_id));
   }
 };

@@ -1,35 +1,30 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import router from "./routes/index.js";
 
 dotenv.config();
-import authRouter from "./routes/auth.route.js";
-import dormRouter from "./routes/dorm.route.js";
-// import testRouter from "./routes/test.route.js";
-import postRouter from "./routes/post.route.js";
-import partyRouter from "./routes/party.route.js";
-import commentRouter from "./routes/comment.route.js";
-import userRouter from "./routes/user.route.js";
 
 
 
 const app = express();
-const FRONTEND_URL = process.env.FRONTEND_URL || "";
-app.use(cors({
-  origin: FRONTEND_URL, // 프론트엔드 주소
-  credentials: true, // 쿠키/인증 헤더 허용
-}));
 app.use(express.json());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
-// Auth
-app.use("/auth", authRouter);
-// app.use("/", testRouter);
-app.use("/", postRouter);
-app.use("/", partyRouter);
-app.use("/", commentRouter);
-app.use("/", dormRouter);
-app.use("/user", userRouter);
-app.use("/users", userRouter);
+app.use("/auth", router.auth);
+app.use("/users", router.users);
+app.use("/posts", router.posts);
+app.use("/comments", router.comments);
+app.use("/parties", router.parties);
+app.use("/dormitories", router.dorm);
+
+app.get("/", (req, res) => res.send("Server OK"));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on ${PORT}`));

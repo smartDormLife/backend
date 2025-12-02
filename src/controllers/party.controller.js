@@ -1,25 +1,12 @@
-import partyService from "../services/party.service.js";
+import { partyService } from "../services/party.service.js";
 
-export async function joinParty(req, res) {
-  try {
-    const partyId = Number(req.params.partyId);
-    const userId = req.user.user_id;
+export const partyController = {
+  join: (req, res) =>
+    partyService.join(req.user.user_id, Number(req.params.partyId)).then(r => res.json(r)),
 
-    const result = await partyService.joinParty(partyId, userId);
-    return res.status(200).json(result);
-  } catch (err) {
-    return res.status(err.status ?? 500).json({ message: err.message });
-  }
-}
+  leave: (req, res) =>
+    partyService.leave(req.user.user_id, Number(req.params.partyId)).then(r => res.json(r)),
 
-export async function leaveParty(req, res) {
-  try {
-    const partyId = Number(req.params.partyId);
-    const userId = req.user.user_id;
-
-    const result = await partyService.leaveParty(partyId, userId);
-    return res.status(200).json(result);
-  } catch (err) {
-    return res.status(err.status ?? 500).json({ message: err.message });
-  }
-}
+  detail: (req, res) =>
+    partyService.detail(Number(req.params.partyId)).then(r => res.json(r))
+};
