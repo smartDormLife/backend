@@ -10,7 +10,7 @@ router.get("/", authMiddleware, (req, res) => {
     }
     postController.list(req, res);
 });
-router.get("/recent", postController.recent);
+router.get("/recent", authMiddleware, postController.recent);
 router.get("/:postId", authMiddleware, postController.detail);
 
 router.post("/", authMiddleware, postController.create);

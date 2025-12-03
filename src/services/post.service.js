@@ -18,9 +18,7 @@ function normalizeCategory(c) {
   }[c] ?? c;
 }
 
-// ------------------------------
 // post 변환기
-// ------------------------------
 function mapPost(post, userId) {
   const party = post.party;
 
@@ -38,13 +36,9 @@ function mapPost(post, userId) {
   };
 }
 
-// ------------------------------
 // Service
-// ------------------------------
 export const postService = {
-  // ----------------------------------------
   // 게시판 목록
-  // ----------------------------------------
   async list(params, userId) {
     let { category, dorm_id, status } = params;
 
@@ -89,10 +83,8 @@ export const postService = {
 
     return { posts: mappedPosts };
   }, 
-  
-  // ----------------------------------------
+
   // 상세 조회
-  // ----------------------------------------
   async detail(postId, userId) {
     console.log("DETAIL CALL:", postId, userId);
     const post = await prisma.post.findUnique({
@@ -120,9 +112,7 @@ export const postService = {
     return mapPost(post, userId);
   },
 
-  // ----------------------------------------
   // 게시글 생성
-  // ----------------------------------------
   async create(userId, body) {
     const { title, content, category, dorm_id, max_member, deadline, location, price } = body;
 
@@ -157,9 +147,8 @@ export const postService = {
 
     return post;
   },
-  // ----------------------------------------
+
   // 수정
-  // ----------------------------------------
   async update(userId, postId, data) {
     const post = await prisma.post.findUnique({ where: { post_id: postId } });
     if (!post) throw { status: 404, message: "Not found" };
@@ -173,9 +162,7 @@ export const postService = {
     return this.detail(postId, userId);
   },
 
-  // ----------------------------------------
   // 삭제
-  // ----------------------------------------
   async remove(userId, postId) {
     const post = await prisma.post.findUnique({ where: { post_id: postId } });
     if (!post) throw { status: 404, message: "Not found" };
@@ -184,20 +171,39 @@ export const postService = {
     await prisma.post.delete({ where: { post_id: postId } });
   },
 
-  async recent(limit = 5) {
-    return await prisma.post.findMany({
-        take: Number(limit),
-        orderBy: { created_at: "desc" },
-        include: {
-            user: true,
-            party: { include: { members: true } }
-        }
+  async recent(limit = 5, userId) {
+    const user = await prisma.user.findUnique({
+      where: { user_id: userId },
+      select: { dorm_id: true }
     });
+    const dormId = user?.dorm_id;
+    if (!dormId) {
+      return { posts: [] }; // dorm_id 없으면 매칭 불가
+    }
+
+    const posts = await prisma.post.findMany({
+      where: {
+        category: { in: ["delivery"] },
+        status: "active",
+        dorm_id: dormId,
+        party: {
+          status: "recruiting"   // Party가 모집 중인 상태
+        }
+      },
+      orderBy: { created_at: "desc" },
+      take: Number(limit),
+      include: {
+        user: true,
+        party: { include: { members: true } }
+      }
+    });
+
+    return {
+      posts: posts.map((p) => mapPost(p, userId))
+    };
   },
 
-  // ----------------------------------------
   // 댓글 목록
-  // ----------------------------------------
   async listComments(postId) {
     return await prisma.comment.findMany({
       where: { post_id: postId },
@@ -206,9 +212,7 @@ export const postService = {
     });
   },
 
-  // ----------------------------------------
   // 댓글 작성
-  // ----------------------------------------
   async addComment(userId, postId, content) {
     return await prisma.comment.create({
       data: { user_id: userId, post_id: postId, content },

@@ -21,12 +21,22 @@ export const partyService = {
 
     const updated = await prisma.party.findUnique({
       where: { party_id: partyId },
-      include: { members: true }
+      include: { members: true, post: true }
     });
 
+    const memberCount = updated.members.length;
+    const max = updated.max_member;
+
+    if (memberCount >= max) {
+      await prisma.party.update({
+        where: { party_id: partyId },
+        data: { status: "closed" }
+      });
+    }
+
     return {
-      current_member_count: updated.members.length,
-      status: updated.status
+      current_member_count: memberCount,
+      status: memberCount >= max ? "closed" : updated.status
     };
   },
 

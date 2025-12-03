@@ -15,7 +15,7 @@ generator client {
 // Models (init.sql 기반 100% 동일)
 // =============================
 
-// 1) Dormitory
+// 1) dormitory
 model Dormitory {
   dorm_id   Int    @id
   dorm_name String

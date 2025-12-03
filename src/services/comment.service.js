@@ -1,16 +1,31 @@
 import prisma from "../utils/prisma.js";
 
 export const commentService = {
-  async remove(userId, commentId) {
-    const comment = await prisma.comment.findUnique({
-      where: { comment_id: commentId }
+  async listMyComments(userId, params = {}) {
+    const size = Number(params.size ?? 6);
+
+    const comments = await prisma.comment.findMany({
+      where: { user_id: userId },
+      orderBy: { created_at: "desc" },
+      take: size,
+      include: {
+        post: {
+          select: {
+            post_id: true,
+            title: true,
+            category: true,
+            dorm_id: true,
+            dorm: true,
+          }
+        }
+      }
     });
 
-    if (!comment) throw { status: 404, message: "Not found" };
-    if (comment.user_id !== userId) throw { status: 403, message: "Forbidden" };
-
-    await prisma.comment.delete({
-      where: { comment_id: commentId }
-    });
+    return {
+      items: comments,
+      totalCount: comments.length,
+      page: 1,
+      size,
+    };
   }
 };

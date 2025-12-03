@@ -21,14 +21,15 @@ export const postController = {
   // ---------------------------
   async recent(req, res) {
     try {
-      const data = await postService.recent();
+      const userId = req.user?.user_id;
+      const data = await postService.recent(5, userId);
       return res.json(data);
     } catch (err) {
-      console.error(err);
       const status = err.status || 500;
       return res.status(status).json({ message: err.message || "Server error" });
     }
   },
+
 
   // ---------------------------
   // 상세 조회
