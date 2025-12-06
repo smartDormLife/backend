@@ -133,10 +133,11 @@ model ChatRoom {
 
 // 7) ChatMember
 model ChatMember {
-  room_id   Int
-  user_id   Int
-  joined_at DateTime @default(now())
-  is_active Boolean  @default(true)
+  room_id      Int
+  user_id      Int
+  joined_at    DateTime  @default(now())
+  is_active    Boolean   @default(true)
+  last_read_at DateTime? // 마지막으로 메시지를 읽은 시간
 
   room ChatRoom @relation(fields: [room_id], references: [room_id])
   user User     @relation(fields: [user_id], references: [user_id])

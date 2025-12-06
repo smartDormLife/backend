@@ -132,7 +132,7 @@ export const postService = {
 
     // 배달/공구/택시일 때 party 생성
     if (["delivery", "purchase", "taxi"].includes(category)) {
-        await prisma.party.create({
+        const party = await prisma.party.create({
             data: {
                 post_id: post.post_id,
                 host_id: userId,
@@ -141,6 +141,35 @@ export const postService = {
                 location: location ?? null,
             }
         });
+
+        // 호스트를 자동으로 파티 멤버로 추가
+        await prisma.partyMember.create({
+            data: {
+                party_id: party.party_id,
+                user_id: userId,
+            }
+        });
+
+        console.log(`✅ 호스트를 파티 멤버로 추가: party_id=${party.party_id}, user_id=${userId}`);
+
+        // 파티 생성 시 자동으로 채팅방 생성
+        const chatRoom = await prisma.chatRoom.create({
+            data: {
+                party_id: party.party_id,
+                last_message: `${title} 채팅방이 생성되었습니다.`,
+            }
+        });
+
+        // 호스트를 자동으로 채팅방 멤버로 추가
+        await prisma.chatMember.create({
+            data: {
+                room_id: chatRoom.room_id,
+                user_id: userId,
+                is_active: true,
+            }
+        });
+
+        console.log(`✅ 채팅방 생성 완료: room_id=${chatRoom.room_id}, party_id=${party.party_id}`);
     }
 
     console.log("게시글 생성 완료:", post.post_id);
@@ -164,11 +193,69 @@ export const postService = {
 
   // 삭제
   async remove(userId, postId) {
-    const post = await prisma.post.findUnique({ where: { post_id: postId } });
+    const post = await prisma.post.findUnique({
+      where: { post_id: postId },
+      include: { party: true }
+    });
+
     if (!post) throw { status: 404, message: "Not found" };
     if (post.user_id !== userId) throw { status: 403, message: "Forbidden" };
 
-    await prisma.post.delete({ where: { post_id: postId } });
+    console.log(`🗑️ 게시글 삭제 시작: post_id=${postId}`);
+
+    // 파티가 있는 경우 (배달/공구/택시)
+    if (post.party) {
+      const partyId = post.party.party_id;
+
+      // 1. 채팅방 찾기
+      const chatRoom = await prisma.chatRoom.findUnique({
+        where: { party_id: partyId }
+      });
+
+      if (chatRoom) {
+        // 1-1. 채팅 메시지 삭제
+        await prisma.chatMessage.deleteMany({
+          where: { room_id: chatRoom.room_id }
+        });
+        console.log(`✅ 채팅 메시지 삭제 완료: room_id=${chatRoom.room_id}`);
+
+        // 1-2. 채팅방 멤버 삭제
+        await prisma.chatMember.deleteMany({
+          where: { room_id: chatRoom.room_id }
+        });
+        console.log(`✅ 채팅방 멤버 삭제 완료: room_id=${chatRoom.room_id}`);
+
+        // 1-3. 채팅방 삭제
+        await prisma.chatRoom.delete({
+          where: { room_id: chatRoom.room_id }
+        });
+        console.log(`✅ 채팅방 삭제 완료: room_id=${chatRoom.room_id}`);
+      }
+
+      // 2. 파티 멤버 삭제
+      await prisma.partyMember.deleteMany({
+        where: { party_id: partyId }
+      });
+      console.log(`✅ 파티 멤버 삭제 완료: party_id=${partyId}`);
+
+      // 3. 파티 삭제
+      await prisma.party.delete({
+        where: { party_id: partyId }
+      });
+      console.log(`✅ 파티 삭제 완료: party_id=${partyId}`);
+    }
+
+    // 4. 댓글 삭제
+    await prisma.comment.deleteMany({
+      where: { post_id: postId }
+    });
+    console.log(`✅ 댓글 삭제 완료: post_id=${postId}`);
+
+    // 5. 게시글 삭제
+    await prisma.post.delete({
+      where: { post_id: postId }
+    });
+    console.log(`✅ 게시글 삭제 완료: post_id=${postId}`);
   },
 
   async recent(limit = 5, userId) {

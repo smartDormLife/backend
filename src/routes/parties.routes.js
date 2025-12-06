@@ -6,6 +6,7 @@ const router = Router();
 
 router.post("/:partyId/join", authMiddleware, partyController.join);
 router.delete("/:partyId/leave", authMiddleware, partyController.leave);
-router.get("/:partyId", authMiddleware, partyController.detail);
+router.post("/:partyId/close", authMiddleware, partyController.close);
+router.get("/:partyId", partyController.detail);
 
 export default router;
