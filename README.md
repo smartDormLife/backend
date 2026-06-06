@@ -414,12 +414,3 @@ sequenceDiagram
 | nodemon        | 개발 환경 서버 자동 재시작    |
 
 <br/>
-
-## 👥 팀 소개
-
-| 이름  | 학과       | 역할                 |
-| --- | -------- | ------------------ |
-| 박서연 | 사이버보안학과  | FrontEnd Developer |
-| 박윤서 | 사이버보안학과  | BackEnd Developer  |
-| 송주영 | 디지털미디어학과 | FrontEnd Developer |
-| 송현수 | 디지털미디어학과 | BackEnd Developer  |
