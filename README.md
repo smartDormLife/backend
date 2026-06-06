@@ -111,7 +111,7 @@ dormitory-community-backend/
 
 ### Service Architecture
 
-![Service Architecture](./assets/service-architecture.png)
+![Service Architecture](./assets/system_architecture.png)
 
 ### ERD
 
