@@ -115,7 +115,7 @@ dormitory-community-backend/
 
 ### ERD
 
-![ERD](./assets/erd.png)
+![ERD](./assets/ERD.png)
 
 <br/>
 
